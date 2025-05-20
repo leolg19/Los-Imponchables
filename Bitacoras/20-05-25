@@ -1,0 +1,68 @@
+Código para el 20/05/2025
+
+Se solucionó el problema de la estabilidad con diferentes condiciones iniciales, sin embargo aún falta adaptar K para los ángulos phi y theta
+
+% Parámetros del sistema
+M = 10;      % Masa del disco
+m = 1;       % masa
+r = 1;       % radio de la cuchilla
+R = 2;       % radio del disco
+Tmotor = 1000; % torque del motor
+k = 2;       % constante de pasto
+
+% Momento de inercia de la cuchilla (constante)
+Icuchilla = (1/3) *m * r^2;
+
+% Funciones auxiliares
+dist = @(theta) (R^2 + r^2 + 2 * R * r * cos(theta))^(1/2); % distancia desde eje
+Idisco = @(theta) (1/2)*M*R^2 + m * (r^2/3 + R^2 + R * r * cos(theta)); % inercia del disco
+
+% Definimos el sistema de ecuaciones diferenciales
+% y = [theta; theta'; phi; phi']
+dydt = @(t, y) [
+    y(2); % theta'
+    
+    (m * y(4)^2 * dist(y(1)) * r/2 * sin(y(1)) - k * (r/2)^2 * y(4)^2) / Icuchilla; % theta''
+    
+    y(4); % phi'
+    
+    (Tmotor - k * dist(y(1))^2 * y(4)^2) / Idisco(y(1)) % phi''
+];
+
+% Condiciones iniciales: theta = 0, theta' = 0, phi = 0, phi' = 0
+y0 = [pi+0.5; 0; 0; 0];
+
+% Intervalo de simulación
+tspan = [0, 2000];
+
+% Resolver con ode45
+[t, y] = ode45(dydt, tspan, y0);
+
+% Extraer variables
+theta = y(:, 1);
+phi = y(:, 3);
+
+% Graficar resultados
+figure;
+plot(t, theta, 'r', 'LineWidth', 2); hold on;
+plot(t, phi, 'b', 'LineWidth', 2);
+xlabel('Tiempo (s)');
+ylabel('Ángulo (rad)');
+legend('\theta(t)', '\phi(t)');
+title('Evolución temporal de \theta y \phi');
+grid on;
+
+% Extraer variables
+theta = y(:, 2);
+phi = y(:, 4);
+
+% Graficar resultados
+figure;
+plot(t, theta, 'r', 'LineWidth', 2); hold on;
+plot(t, phi, 'b', 'LineWidth', 2);
+xlabel('Tiempo (s)');
+ylabel('Ángulo (rad)');
+legend('\theta(t)', '\phi(t)');
+title('Evolución temporal de "velocidades" \theta y \phi ');
+grid on;
+
